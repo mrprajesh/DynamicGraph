@@ -17,14 +17,14 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 
-import javax.swing.AbstractButton;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
 /**
- * @author rajz
+ * @author rajz : Rajesh Pandian M
  *
  */
 public class DynamicGraph extends JFrame implements ActionListener, MouseListener, MouseMotionListener {
@@ -42,16 +42,16 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 	
 	private boolean isaddVert = true;
 	private boolean isaddEdge = false;
-	private boolean isaddComp = false;
+	//private boolean isaddComp = false;
 	
-	private static boolean dragged = false; 
-	private static Point draggedPoint, draggingPoint , secondPoint; 
-	
+	//private static boolean dragged = false; 
+	private static Point secondPoint; 
+	private int draggedPointIndex;
 	private int totalVertices;
 	private int vertexSize = 20, shift=10;
 	
 	private ArrayList<Point> vertexList ;
-	private HashMap<Point,ArrayList<Point>> edgeListMap ;
+	private HashMap<Point,ArrayList<Integer>> edgeListMap ;
 	private boolean isDragable = false;
 	
 	
@@ -59,7 +59,7 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 	 * @throws HeadlessException
 	 */
 	public DynamicGraph() throws HeadlessException {
-		// TODO Auto-generated constructor stub
+		
 		setTitle("Dynamic graphs");
 		
 		addMouseListener(this);
@@ -85,6 +85,7 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 		edgeListMap = new HashMap<>();
 		vertexList = new ArrayList<Point>();
 		totalVertices = 0;
+		draggedPointIndex = -1;
 
 	}
 
@@ -93,7 +94,7 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 	 */
 	public DynamicGraph(GraphicsConfiguration arg0) {
 		super(arg0);
-		// TODO Auto-generated constructor stub
+		
 	}
 
 	/**
@@ -102,7 +103,7 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 	 */
 	public DynamicGraph(String arg0) throws HeadlessException {
 		super(arg0);
-		// TODO Auto-generated constructor stub
+		 
 	}
 
 	/**
@@ -111,7 +112,7 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 	 */
 	public DynamicGraph(String arg0, GraphicsConfiguration arg1) {
 		super(arg0, arg1);
-		// TODO Auto-generated constructor stub
+		
 	}
 
 	/* (non-Javadoc)
@@ -119,12 +120,18 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 	 */
 	@Override
 	public void mouseDragged(MouseEvent e) { 
-		draggingPoint = new Point (e.getPoint(), draggedPoint.verNumber);
-		System.out.println("dragging " + draggedPoint + " to " + draggingPoint);
-		int index = vertexList.indexOf(draggedPoint);
-		vertexList.get(index).x = e.getX();
-		vertexList.get(index).y = e.getY();
-		drawNodes();
+		// -1 nothing is draggeing
+		// index has point that is being dragged
+		if( isDragable == true & draggedPointIndex != -1 ){
+			//draggingPoint = new Point (e.getPoint());
+			System.out.println("dragging " + draggedPointIndex + " to " + e.getPoint());
+			
+			vertexList.get(draggedPointIndex).x = e.getX();
+			vertexList.get(draggedPointIndex).y = e.getY();
+			
+			drawNodes();
+		}
+		
 	/*	
 		draggingPoint = e.getPoint();
 		if(dragged == true){
@@ -136,19 +143,11 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 	*/
 	}
 
-	private void updatePoint(Point draggedPoint, Point draggingPoint) {
-		int index = vertexList.indexOf(draggedPoint); 
-		System.out.println(index + " " + draggedPoint);		
-		vertexList.set(index, draggingPoint);
-		
-	}
-
 	/* (non-Javadoc)
 	 * @see java.awt.event.MouseMotionListener#mouseMoved(java.awt.event.MouseEvent)
 	 */
 	@Override
 	public void mouseMoved(MouseEvent e) {
-		// TODO Auto-generated method stub
 
 	}
 
@@ -160,24 +159,23 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 		Point newPoint = new  Point(e.getPoint()) ;
 		Point point = isSamePoint(newPoint) ;
 		
-		if(isDragable = true && point != null ){
-			draggedPoint = point;
-		}
-		
+//		if(isDragable == true && point != null ){
+//			draggedPoint = point;
+//		}
+//		else 
 		if(isaddEdge == true && secondPoint == null){
 			if( point != null ) {
-				secondPoint = point;
-				
+				secondPoint = point;	
 			}
-			
 		}
 		else if (isaddEdge == true && secondPoint != null){
 			if( point != null ) {
+				// if clicked on the same point twice
 				if(secondPoint.equals(point)){
 					secondPoint = null;
 					return;
 				}
-				System.out.println("Line " + secondPoint +" to " + point );
+				System.out.println("Line " + secondPoint.verNumber +" to " + point.verNumber );
 				addEdgeBetween(secondPoint, point);
 				secondPoint = null;
 			}
@@ -185,9 +183,8 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 		if(e.getButton() == MouseEvent.BUTTON3){
 			if(point != null )
 			{
-				System.out.println("Remove v");
-				
-				removeNode(point);
+				System.out.println("Remove v " + point.verNumber);
+				removePoint(point);
 				totalVertices--;
 			}
 		}
@@ -196,9 +193,11 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 				System.out.print(totalVertices + " "  );
 				newPoint.verNumber = totalVertices++;
 				
-				vertexList.add(newPoint);
-				edgeListMap.put(newPoint, new ArrayList<Point>());
+				ArrayList<Integer> arrayList = new ArrayList<Integer>();;
+				edgeListMap.put(newPoint, arrayList);
 				
+				vertexList.add(newPoint);
+				System.out.print("+");
 			}
 			int x = e.getX();
 			int y = e.getY();
@@ -208,25 +207,36 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 		drawNodes();
 	}
 
-	private void removeNode(Point point) {
-		vertexList.remove(point);
-		for(Point p : edgeListMap.get(point) ){
-			edgeListMap.get(p).remove(point);
+	private void removePoint(Point point) {
+		
+		for(int index = 0, updateIndex = vertexList.indexOf(point), size = vertexList.size(); index < size ; index++  ){
+			vertexList.get(index).AdjList.remove(point);
+			
+			int curVerNum = vertexList.get(index).verNumber;
+			if(index > updateIndex){
+				vertexList.get(index).verNumber =  curVerNum - 1;
+			}
 		}
-		edgeListMap.remove(point);
+		vertexList.remove(point);
 	}
-
 	private void addEdgeBetween(Point secondPoint, Point point) {
 		try{
-			if(edgeListMap.get(secondPoint).contains(point) == false)
-				edgeListMap.get(secondPoint).add(point);
+			if(edgeListMap.get(secondPoint).contains(point.verNumber) == false){
+				edgeListMap.get(secondPoint).add(point.verNumber);
+				vertexList.get(secondPoint.verNumber).AdjList.add(point);
+			}
 		}catch(NullPointerException npe){
-			System.out.println(" Error 1 " + npe);
+			System.out.println(" Error 1 " );
+			
+			npe.printStackTrace();
 		}
 		
 		try{
-			if(edgeListMap.get(point).contains(secondPoint) == false)
-				edgeListMap.get(point).add(secondPoint);
+			if(edgeListMap.get(point).contains(secondPoint.verNumber) == false) {
+				edgeListMap.get(point).add(secondPoint.verNumber);
+				
+				vertexList.get(point.verNumber).AdjList.add(secondPoint);
+			}
 		}catch(NullPointerException npe){
 			System.out.println(" Error 2 " + npe);
 		}
@@ -238,7 +248,7 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 	 */
 	@Override
 	public void mouseEntered(MouseEvent e) {
-		// TODO Auto-generated method stub
+		// TODOAuto-generated method stub
 
 	}
 
@@ -247,7 +257,7 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 	 */
 	@Override
 	public void mouseExited(MouseEvent e) {
-		// TODO Auto-generated method stub
+		// TODOAuto-generated method stub
 
 	}
 
@@ -266,7 +276,13 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 			dragged = true;
 		}
 	*/
-	
+		Point newPoint = new  Point(e.getPoint()) ;
+		Point point = isSamePoint(newPoint) ;
+		
+		if(isDragable == true && point != null ){
+			draggedPointIndex = point.verNumber;
+		}
+		
 	}
 
 	/* (non-Javadoc)
@@ -280,6 +296,13 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 			draggedPoint = null;
 		}
 		*/
+		
+		if(isDragable == true){
+			System.out.println("Dragged pt "+ draggedPointIndex + " released!");
+			draggedPointIndex = -1;
+			printAdjList();
+		}
+		
 		
 	}
 
@@ -323,19 +346,21 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 		
 		g2.setColor(new Color(44, 102, 230, 180));
         g2.setStroke(new BasicStroke(2f));
-        
-		for ( Point keyPoint : edgeListMap.keySet() ){
-			ArrayList<Point> adjPoint  = edgeListMap.get(keyPoint);
-			for( Point p : adjPoint )
-				g2.drawLine(p.x , p.y, keyPoint.x , keyPoint.y);
-		}
+        for( Point point : vertexList) {
+        	LinkedList<Point> adjList = point.AdjList;
+        	if(adjList != null){
+	        	for (Point endPoint : adjList ){
+	        		g2.drawLine(point.x , point.y, endPoint.x, endPoint.y);
+	        	}
+        	}
+        }
 	}
+	
 	/* (non-Javadoc)
 	 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
 	 */
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		// TODO Auto-generated method stub
 		
 		
 		if( e.getSource().equals(buttonAddVertices)) {
@@ -352,7 +377,6 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 				buttonCompute.setEnabled(true);
 				isaddVert = false;
 				buttonAddVertices.setText("Add Vertices");
-				isDragable = true;
 				buttonDrag.setEnabled(true);
 			}
 		}
@@ -371,7 +395,6 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 				System.out.println("Add Edges - disabled");
 				buttonAddEdges.setText("Add edges");
 				isaddEdge = false;
-				isDragable = true;
 				buttonDrag.setEnabled(true);
 				buttonAddVertices.setEnabled(true);
 				buttonCompute.setEnabled(true);
@@ -379,35 +402,40 @@ public class DynamicGraph extends JFrame implements ActionListener, MouseListene
 		}
 		else if(e.getSource().equals(buttonCompute)){
 			System.out.println("computing..");
-			printAdj();
+			printAdjList();
 		
 		}else if(e.getSource().equals(buttonDrag)) {
-			if(buttonDrag.isEnabled() == false){
-				buttonDrag.setEnabled(true);
-				isDragable  = true;
-				System.out.println("Drag - disabled");
-			}
-			else if(buttonDrag.isEnabled() == true){
+			
+			if(isDragable == false){
 				buttonDrag.setText("Disable Drag");
-				isDragable  = false;
+				isDragable  = true;
 				System.out.println("Drag - enabled");
 			}
+			else if(isDragable == true){
+				buttonDrag.setText("Disable Drag");
+				isDragable  = false;
+				System.out.println("Drag - disabled");
+			}
 		}else {
-			
+			System.out.println("Something wrong!");
 		}
 
 	}
-
-	private void printAdj() {
-		for ( Point keyPoint : edgeListMap.keySet() ){
-			ArrayList<Point> adjPoint  = edgeListMap.get(keyPoint);
+	
+	
+	private void printAdjList() {
+		int index =0;
+		for ( Point keyPoint : vertexList ){
 			System.out.print( keyPoint.verNumber + " |= ");
-			for( Point p : adjPoint ){
-				System.out.print(" "+ p.verNumber );
+			for(Point nbPoint : vertexList.get(index).AdjList){
+				System.out.print(" "+ nbPoint.verNumber );
 			}
-			System.out.println();;
+			index++;
+			System.out.println();
 		}
 		
 	}
+
+ 
 
 }
